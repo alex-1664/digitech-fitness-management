@@ -7,8 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Firebase Admin Setup using ENV variable
-// Set FIREBASE_SERVICE_ACCOUNT in Render Environment Variables
-// Value = entire JSON of service account key
+// FIREBASE_SERVICE_ACCOUNT must be set in Render environment
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
@@ -22,7 +21,7 @@ app.use(cors());
 app.use(express.static('public'));
 app.use(bodyParser.json());
 
-// API Routes
+// Routes
 
 // Get all members
 app.get('/api/members', async (req, res) => {
