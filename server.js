@@ -2,18 +2,27 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
+// Middlewares
 app.use(cors());
+app.use(express.static('public'));
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send("Digitech Fitness Management API Running");
+// Sample API Route (Test Route)
+app.get('/api/members', (req, res) => {
+  res.json([
+    { id: 1, name: "John Doe", plan: "Monthly" },
+    { id: 2, name: "Mary Wanjiku", plan: "Weekly" }
+  ]);
 });
 
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: "API working perfectly" });
+// Root Test (Optional but good)
+app.get('/api', (req, res) => {
+  res.send("Digitech Fitness API Running...");
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start Server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
