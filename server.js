@@ -1,57 +1,73 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Digitech Fitness Management</title>
-</head>
-<body style="font-family: Arial; text-align:center; padding:40px;">
-  <h1>🏋️ Digitech Fitness Management System</h1>
-  <h2>Ishiara Branch</h2>
-  <p>Status: <b>System Running</b></p>
+const express = require('express');
+const cors = require('cors');
+const admin = require('firebase-admin');
+const bodyParser = require('body-parser');
 
-  <h3>Register New Member</h3>
-  <input type="text" id="name" placeholder="Member Name">
-  <input type="text" id="plan" placeholder="Plan (Weekly/Monthly)">
-  <button onclick="addMember()">Add Member</button>
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  <h3>Members List</h3>
-  <button onclick="loadMembers()">View Members</button>
-  <div id="members"></div>
+// Firebase Admin Setup using ENV variable
+// Set FIREBASE_SERVICE_ACCOUNT in Render Environment Variables
+// Value = entire JSON of service account key
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-  <script>
-    async function loadMembers() {
-      const res = await fetch('/api/members');
-      const data = await res.json();
-      let html = "<ul>";
-      data.forEach(m => {
-        html += `<li>${m.name} (${m.plan}) 
-                 <button onclick="deleteMember('${m.id}')">Delete</button>
-                 </li>`;
-      });
-      html += "</ul>";
-      document.getElementById('members').innerHTML = html;
-    }
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
-    async function addMember() {
-      const name = document.getElementById('name').value;
-      const plan = document.getElementById('plan').value;
-      const res = await fetch('/api/members', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, plan })
-      });
-      if (res.ok) {
-        document.getElementById('name').value = '';
-        document.getElementById('plan').value = '';
-        loadMembers();
-      } else {
-        alert("Failed to add member");
-      }
-    }
+const db = admin.firestore();
 
-    async function deleteMember(id) {
-      const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
-      if (res.ok) loadMembers();
-    }
-  </script>
-</body>
-</html>
+// Middlewares
+app.use(cors());
+app.use(express.static('public'));
+app.use(bodyParser.json());
+
+// API Routes
+
+// Get all members
+app.get('/api/members', async (req, res) => {
+  try {
+    const snapshot = await db.collection('members').get();
+    const members = [];
+    snapshot.forEach(doc => {
+      members.push({ id: doc.id, ...doc.data() });
+    });
+    res.json(members);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add a new member
+app.post('/api/members', async (req, res) => {
+  try {
+    const { name, plan } = req.body;
+    if (!name || !plan) return res.status(400).json({ error: "Name & plan required" });
+
+    const docRef = await db.collection('members').add({ name, plan });
+    res.json({ id: docRef.id, name, plan });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a member
+app.delete('/api/members/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.collection('members').doc(id).delete();
+    res.json({ message: "Member deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Test root route
+app.get('/api', (req, res) => {
+  res.send("Digitech Fitness API Running...");
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
