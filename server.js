@@ -1,8 +1,19 @@
 const express = require('express');
+const cors = require('cors');
+
 const app = express();
+
+app.use(cors());
+app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send("Digitech Fitness Management API Running");
 });
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: "API working perfectly" });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
